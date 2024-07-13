@@ -1,20 +1,30 @@
 <!-- src/components/Swap.vue -->
 <template>
-  <div>
-    <button v-if="!isConnected" @click="connectWalletHandler">Connect MetaMask</button>
-    <div v-if="isConnected">
-      <input v-model.number="usdtAmountNormal" placeholder="USDT to Sell" />
-      <input :value="apeRangeNormal" placeholder="ApeCoin to Buy" readonly />
-      <div>{{ `market price: ${apeAmountNormal}` }}</div>
-      <button @click="sellTokens">Swap</button>
-      <div v-if="transactionMessageNormal">{{ transactionMessageNormal }}</div>
-    </div>
-    <div v-if="isConnected">
-      <input v-model.number="apeAmountBigi" placeholder="ApeCoin to Sell" />
-      <input :value="usdtRangeBigi" placeholder="USDT to Buy" readonly />
-      <div>{{ `market price: ${usdtAmountBigi}` }}</div>
-      <button @click="sellTokens">BigiSwap</button>
-      <div v-if="transactionMessageBigi">{{ transactionMessageBigi }}</div>
+    <div class="container">
+      <button v-if="!isConnected" @click="connectWalletHandler" class="connect-button">
+        Connect MetaMask
+      </button>
+      <div v-if="isConnected" class="swap-section">
+        <div class="swap-box">
+          <h2>Normal Swap</h2>
+          <input v-model.number="usdtAmountNormal" placeholder="USDT to Sell" />
+          <input :value="apeRangeNormal" placeholder="ApeCoin to Buy" readonly />
+          <div class="market-price">{{ `Market price: ${apeAmountNormal}` }}</div>
+          <button @click="sellTokens" class="swap-button">Swap</button>
+          <div v-if="transactionMessageNormal" class="transaction-message">
+            {{ transactionMessageNormal }}
+        </div>
+      </div>
+      <div class="swap-box">
+        <h2>BigiSwap</h2>
+        <input v-model.number="apeAmountBigi" placeholder="ApeCoin to Sell" />
+        <input :value="usdtRangeBigi" placeholder="USDT to Buy" readonly />
+        <div class="market-price">{{ `Market price: ${usdtAmountBigi}` }}</div>
+        <button @click="sellTokens" class="swap-button">BigiSwap</button>
+        <div v-if="transactionMessageBigi" class="transaction-message">
+          {{ transactionMessageBigi }}
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -98,16 +108,86 @@ const sellTokens = async () => {
 </script>
 
 <style scoped>
-button {
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.connect-button {
+  display: block;
+  width: 100%;
   padding: 10px;
   background-color: #007bff;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  font-size: 16px;
 }
 
-button:hover {
+.connect-button:hover {
   background-color: #0056b3;
+}
+
+.swap-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.swap-box {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.swap-box h2 {
+  margin-bottom: 15px;
+  font-size: 20px;
+  color: #333;
+}
+
+.swap-box input {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.market-price {
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #666;
+}
+
+.swap-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.swap-button:hover {
+  background-color: #218838;
+}
+
+.transaction-message {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 5px;
 }
 </style>
