@@ -35,6 +35,8 @@ import { ref, watch, computed } from 'vue';
 import { watchDebounced } from '@vueuse/core';
 import { ethers } from 'ethers';
 import { connectWallet } from '../wallet';
+import abi from '../../artifact/abi.json'; // Ensure correct path to ABI file
+import contractAddressData from '../../artifact/contract_address.json';
 
 // Reactive state
 const signer = ref<ethers.Signer | null>(null);
@@ -50,34 +52,125 @@ const usdtUpperBigi = ref<number | null>(null);
 const transactionMessageNormal = ref('');
 const transactionMessageBigi = ref('');
 
-// Market price
-const marketPriceNormal = 0.01; // Assume flat price
-const marketPriceBigi = 100
+// Contract address
+const contractAddress = contractAddressData.contractAddress;
+
+// Create provider and contract instance
+const provider = ref<ethers.BrowserProvider | null>(null);
+const contract = ref<ethers.Contract | null>(null);
+
+const connectWalletHandler = async () => {
+  try {
+    // Assuming connectWallet retrieves a provider or handles MetaMask connection
+    const connectedProvider = await connectWallet();
+
+    if (connectedProvider) {
+      console.log("Connected provider:", connectedProvider);
+
+      // Set provider and contract instances
+      provider.value = connectedProvider; // Use the connected provider directly
+      contract.value = new ethers.Contract(contractAddress, abi, provider.value);
+      
+      isConnected.value = true;
+    } else {
+      isConnected.value = false;
+    }
+  } catch (error) {
+    console.error("Failed to connect wallet:", error);
+    isConnected.value = false;
+  }
+};
+
+// Function to fetch swap results for normal mode
+const fetchNormalSwapResult = async (usdtAmount) => {
+  try {
+    console.log("Fetching swap result with amount:", usdtAmount);
+    if (!contract.value) {
+      console.error("Contract instance is not initialized.");
+      return { apeLower: "0", apeNormal: "0", apeUpper: "0" };
+    } else {
+      console.log("Contract instance: ", contract.value)
+    }
+    
+    if (contract.value && typeof contract.value.SwapResultOfTargetAmount === 'function') {
+        console.log("Contract instance has SwapResultOfTargetAmount function.");
+    } else {
+        console.error("Contract instance does not have SwapResultOfTargetAmount function.");
+        // Handle this case, such as returning early or displaying an error message
+    }
+    const result = await contract.value.SwapResultOfTargetAmount(
+      ethers.parseUnits("0", 18),  // _targetTokenAmount (assuming it's zero)
+      ethers.parseUnits(usdtAmount.toString(), 18), // _basicTokenAmount
+      1   // SellType for normal mode
+    );
+    console.log("Swap result:", result);
+
+    return {
+      apeLower: ethers.formatUnits(result[0], 18),
+      apeNormal: ethers.formatUnits(result[1], 18),
+      apeUpper: ethers.formatUnits(result[2], 18)
+    };
+  } catch (error) {
+    console.error("Failed to fetch swap result:", error);
+    return { apeLower: "0", apeNormal: "0", apeUpper: "0" };
+  }
+};
+
+// Function to fetch swap results for bigi mode
+const fetchBigiSwapResult = async (apeAmount: number) => {
+  if (contract.value) {
+    try {
+      const result = await contract.value.SwapResultOfTargetAmount(
+        ethers.parseUnits(apeAmount.toString(), 18), // _targetTokenAmount
+        0,  // Not used in bigi mode
+        0   // SellType for bigi mode
+      );
+      return {
+        usdtLower: ethers.formatUnits(result[0], 18),
+        usdtNormal: ethers.formatUnits(result[1], 18),
+        usdtUpper: ethers.formatUnits(result[2], 18)
+      };
+    } catch (error) {
+      console.error("Failed to fetch swap result:", error);
+      return { usdtLower: 0, usdtNormal: 0, usdtUpper: 0 };
+    }
+  }
+  return { usdtLower: 0, usdtNormal: 0, usdtUpper: 0 };
+};
 
 // Watcher to update apeAmount when usdtAmount changes (normal)
-watchDebounced(usdtAmountNormal, (newVal) => {
-  apeAmountNormal.value = newVal ? newVal * marketPriceNormal * 1.0 : null;
-  apeLowerNormal.value = newVal ? newVal * marketPriceNormal * 0.9 : null;
-  apeUpperNormal.value = newVal ? newVal * marketPriceNormal * 1.1 : null;
+watchDebounced(usdtAmountNormal, async (newVal) => {
+  if (newVal) {
+    console.log(newVal)
+    const { apeLower, apeNormal, apeUpper } = await fetchNormalSwapResult(newVal);
+    apeLowerNormal.value = apeLower;
+    apeAmountNormal.value = apeNormal;
+    apeUpperNormal.value = apeUpper;
+  } else {
+    apeLowerNormal.value = null;
+    apeAmountNormal.value = null;
+    apeUpperNormal.value = null;
+  }
 }, { debounce: 500, maxWait: 1000 });
 
 // Watcher to update usdtAmount when apeAmount changes (bigi)
-watchDebounced(apeAmountBigi, (newVal) => {
-  usdtAmountBigi.value = newVal ? newVal * marketPriceBigi * 1.0 : null;
-  usdtLowerBigi.value = newVal ? newVal * marketPriceBigi * 0.9 : null;
-  usdtUpperBigi.value = newVal ? newVal * marketPriceBigi * 2 : null;
+watchDebounced(apeAmountBigi, async (newVal) => {
+  if (newVal) {
+    const { usdtLower, usdtNormal, usdtUpper } = await fetchBigiSwapResult(newVal);
+    usdtLowerBigi.value = usdtLower;
+    usdtAmountBigi.value = usdtNormal;
+    usdtUpperBigi.value = usdtUpper;
+  } else {
+    usdtLowerBigi.value = null;
+    usdtAmountBigi.value = null;
+    usdtUpperBigi.value = null;
+  }
 }, { debounce: 500, maxWait: 1000 });
-
-// Function to connect to MetaMask
-const connectWalletHandler = async () => {
-  signer.value = await connectWallet();
-  isConnected.value = !!signer.value;
-};
 
 // Computed property to format the range display
 const apeRangeNormal = computed(() => {
   if (apeLowerNormal.value !== null && apeUpperNormal.value !== null) {
-    return `${apeLowerNormal.value.toFixed(2)} - ${apeUpperNormal.value.toFixed(2)} ApeCoin`;
+    return `${apeLowerNormal.value} - ${apeUpperNormal.value} ApeCoin`;
   }
   return '';
 });
@@ -85,7 +178,7 @@ const apeRangeNormal = computed(() => {
 // Computed property to format the range display
 const usdtRangeBigi = computed(() => {
   if (usdtLowerBigi.value !== null && usdtUpperBigi.value !== null) {
-    return `${usdtLowerBigi.value.toFixed(2)} - ${usdtUpperBigi.value.toFixed(2)} USDT`;
+    return `${usdtLowerBigi.value} - ${usdtUpperBigi.value} USDT`;
   }
   return '';
 });
@@ -95,7 +188,7 @@ const sellTokens = async () => {
   if (!signer.value || usdtAmountNormal.value === null) return;
   const transaction = {
     to: '0xYourSmartContractAddress', // Replace with your smart contract address
-    value: ethers.utils.parseUnits((usdtAmountNormal.value * marketPriceNormal).toString(), 'ether')
+    value: ethers.parseUnits((usdtAmountNormal.value * marketPriceNormal).toString(), 'ether')
   };
   try {
     const tx = await signer.value.sendTransaction(transaction);
