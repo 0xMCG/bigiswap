@@ -66,11 +66,16 @@ const connectWalletHandler = async () => {
 
     if (connectedProvider) {
       console.log("Connected provider:", connectedProvider);
+    
+      const network = await connectedProvider.getNetwork();
+      console.log("Connected network:", network);
 
+      signer.value = await connectedProvider.getSigner();
+      console.log("Signer:", signer.value)
       // Set provider and contract instances
       provider.value = connectedProvider; // Use the connected provider directly
       contract.value = new ethers.Contract(contractAddress, abi, provider.value);
-      
+
       isConnected.value = true;
     } else {
       isConnected.value = false;
@@ -183,22 +188,27 @@ const usdtRangeBigi = computed(() => {
   return '';
 });
 
-// Function to handle selling tokens
+// Function to handle selling tokens using Swap function
 const sellTokens = async () => {
-  if (!signer.value || usdtAmountNormal.value === null) return;
-  const transaction = {
-    to: '0xYourSmartContractAddress', // Replace with your smart contract address
-    value: ethers.parseUnits((usdtAmountNormal.value * marketPriceNormal).toString(), 'ether')
-  };
+  if (!signer.value || usdtAmountNormal.value === null || !contract.value) return;
+
   try {
-    const tx = await signer.value.sendTransaction(transaction);
-    await tx.wait();
-    transactionMessageNormal.value = `You sold ${usdtAmountNormal.value} USDT tokens at ${marketPriceNormal} APE/USDT.`;
+    const tx = await contract.value.Swap(
+      ethers.parseUnits("0", 18), // _targetTokenAmount (set to 0 for your case)
+      ethers.parseUnits(usdtAmountNormal.value.toString(), 18), // _basicTokenAmount
+      1 // _swapType (1 for normal mode)
+    );
+
+    const receipt = await tx.wait();
+    transactionMessageNormal.value = `Transaction successful!`;
+    console.log("Transaction receipt:", receipt);
+    // You can update transactionMessageNormal.value with more specific details based on your contract's functionality.
   } catch (error) {
     transactionMessageNormal.value = 'Transaction failed!';
     console.error(error);
   }
 };
+
 </script>
 
 <style scoped>
