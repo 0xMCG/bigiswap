@@ -74,7 +74,7 @@ const connectWalletHandler = async () => {
       console.log("Signer:", signer.value)
       // Set provider and contract instances
       provider.value = connectedProvider; // Use the connected provider directly
-      contract.value = new ethers.Contract(contractAddress, abi, provider.value);
+      contract.value = new ethers.Contract(contractAddress, abi, signer.value);
 
       isConnected.value = true;
     } else {
@@ -137,10 +137,10 @@ const fetchBigiSwapResult = async (apeAmount: number) => {
       };
     } catch (error) {
       console.error("Failed to fetch swap result:", error);
-      return { usdtLower: 0, usdtNormal: 0, usdtUpper: 0 };
+      return { usdtLower: "0", usdtNormal: "0", usdtUpper: "0" };
     }
   }
-  return { usdtLower: 0, usdtNormal: 0, usdtUpper: 0 };
+  return { usdtLower: "0", usdtNormal: "0", usdtUpper: "0" };
 };
 
 // Watcher to update apeAmount when usdtAmount changes (normal)
@@ -200,7 +200,7 @@ const sellTokens = async () => {
     );
 
     const receipt = await tx.wait();
-    transactionMessageNormal.value = `Transaction successful!`;
+    transactionMessageNormal.value = 'Transaction successful!';
     console.log("Transaction receipt:", receipt);
     // You can update transactionMessageNormal.value with more specific details based on your contract's functionality.
   } catch (error) {
