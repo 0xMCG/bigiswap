@@ -31,7 +31,7 @@
 </template>
   
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { watchDebounced } from '@vueuse/core';
 import { ethers } from 'ethers';
 import { connectWallet } from '../wallet';
@@ -41,14 +41,14 @@ import contractAddressData from '../../artifact/contract_address.json';
 // Reactive state
 const signer = ref<ethers.Signer | null>(null);
 const isConnected = ref(false);
-const apeAmountNormal = ref<number | null>(null);
-const usdtAmountNormal = ref<number | null>(null);
-const apeLowerNormal = ref<number | null>(null);
-const apeUpperNormal = ref<number | null>(null);
-const apeAmountBigi = ref<number | null>(null);
-const usdtAmountBigi = ref<number | null>(null);
-const usdtLowerBigi = ref<number | null>(null);
-const usdtUpperBigi = ref<number | null>(null);
+const apeAmountNormal = ref('');
+const usdtAmountNormal = ref('');
+const apeLowerNormal = ref('');
+const apeUpperNormal = ref('');
+const apeAmountBigi = ref('');
+const usdtAmountBigi = ref('');
+const usdtLowerBigi = ref('');
+const usdtUpperBigi = ref('');
 const transactionMessageNormal = ref('');
 const transactionMessageBigi = ref('');
 
@@ -87,7 +87,7 @@ const connectWalletHandler = async () => {
 };
 
 // Function to fetch swap results for normal mode
-const fetchNormalSwapResult = async (usdtAmount) => {
+const fetchNormalSwapResult = async (usdtAmount: string) => {
   try {
     console.log("Fetching swap result with amount:", usdtAmount);
     if (!contract.value) {
@@ -122,7 +122,7 @@ const fetchNormalSwapResult = async (usdtAmount) => {
 };
 
 // Function to fetch swap results for bigi mode
-const fetchBigiSwapResult = async (apeAmount: number) => {
+const fetchBigiSwapResult = async (apeAmount: string) => {
   if (contract.value) {
     try {
       const result = await contract.value.SwapResultOfTargetAmount(
@@ -152,9 +152,9 @@ watchDebounced(usdtAmountNormal, async (newVal) => {
     apeAmountNormal.value = apeNormal;
     apeUpperNormal.value = apeUpper;
   } else {
-    apeLowerNormal.value = null;
-    apeAmountNormal.value = null;
-    apeUpperNormal.value = null;
+    apeLowerNormal.value = '';
+    apeAmountNormal.value = '';
+    apeUpperNormal.value = '';
   }
 }, { debounce: 500, maxWait: 1000 });
 
@@ -166,15 +166,15 @@ watchDebounced(apeAmountBigi, async (newVal) => {
     usdtAmountBigi.value = usdtNormal;
     usdtUpperBigi.value = usdtUpper;
   } else {
-    usdtLowerBigi.value = null;
-    usdtAmountBigi.value = null;
-    usdtUpperBigi.value = null;
+    usdtLowerBigi.value = '';
+    usdtAmountBigi.value = '';
+    usdtUpperBigi.value = '';
   }
 }, { debounce: 500, maxWait: 1000 });
 
 // Computed property to format the range display
 const apeRangeNormal = computed(() => {
-  if (apeLowerNormal.value !== null && apeUpperNormal.value !== null) {
+  if (apeLowerNormal.value !== '' && apeUpperNormal.value !== '') {
     return `${apeLowerNormal.value} - ${apeUpperNormal.value} ApeCoin`;
   }
   return '';
@@ -182,7 +182,7 @@ const apeRangeNormal = computed(() => {
 
 // Computed property to format the range display
 const usdtRangeBigi = computed(() => {
-  if (usdtLowerBigi.value !== null && usdtUpperBigi.value !== null) {
+  if (usdtLowerBigi.value !== '' && usdtUpperBigi.value !== '') {
     return `${usdtLowerBigi.value} - ${usdtUpperBigi.value} USDT`;
   }
   return '';
