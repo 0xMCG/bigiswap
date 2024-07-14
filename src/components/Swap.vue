@@ -20,7 +20,7 @@
         <input v-model.number="apeAmountBigi" placeholder="ApeCoin to Sell" />
         <input :value="usdtRangeBigi" placeholder="USDT to Buy" readonly />
         <div class="market-price">{{ `Market price: ${usdtAmountBigi} USDT given ${apeAmountBigi} ApeCoin` }}</div>
-        <div class="market-price">{{ `A chance of winning double (${usdtUpperBigi} USDT)!` }}</div>
+        <div class="market-price">{{ `A chance of winning double (around ${Number(usdtAmountBigi) * 2} USDT)!` }}</div>
         <button @click="sellTokensBigi" class="swap-button">BigiSwap</button>
         <div v-if="transactionMessageBigi" class="transaction-message">
           {{ transactionMessageBigi }}
@@ -180,7 +180,7 @@ const apeRangeNormal = computed(() => {
 // Computed property to format the range display
 const usdtRangeBigi = computed(() => {
   if (usdtLowerBigi.value !== '' && usdtUpperBigi.value !== '') {
-    return `${usdtLowerBigi.value} - ${usdtUpperBigi.value} USDT`;
+    return `${usdtLowerBigi.value} - ${usdtUpperBigi.value} USDT (conservative)`;
   }
   return '';
 });
@@ -220,6 +220,7 @@ const sellTokensNormal = async () => {
         );
 
         const receipt = await tx.wait();
+        console.log(receipt)
         transactionMessageNormal.value = 'Transaction successful!';
         console.log("Transaction receipt:", receipt);
         // You can update transactionMessageNormal.value with more specific details based on your contract's functionality.
@@ -268,6 +269,7 @@ const sellTokensBigi = async () => {
         );
 
         const receipt = await tx.wait();
+        console.log(receipt)
         transactionMessageBigi.value = 'Transaction successful!';
         console.log("Transaction receipt:", receipt);
       } catch (error) {
